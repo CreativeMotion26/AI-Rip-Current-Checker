@@ -1,0 +1,1 @@
+# AI-Rip-Current-Checker

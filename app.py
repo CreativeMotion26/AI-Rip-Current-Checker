@@ -17,13 +17,12 @@ st.markdown("""
     <style>
     .stButton>button {
         width: 100%;
-        background-color: #F8F9FA;
-        color: #000000;
+        background-color: #f0f2f6;
+        color: #262730;
         border: none;
-        padding: 15px;
-        border-radius: 10px;
-        margin: 10px 0;
-        font-size: 16px;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 5px 0;
     }
     .main {
         padding: 2rem;
@@ -32,38 +31,34 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
     }
-    .nav-container {
+    .pagination-nav {
         display: flex;
         justify-content: center;
         align-items: center;
+        padding: 1rem;
         gap: 10px;
         margin-top: 2rem;
-        padding: 1rem;
     }
-    .nav-item {
-        width: 36px;
-        height: 36px;
+    .page-item {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #ddd;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid #dee2e6;
-        border-radius: 50%;
         cursor: pointer;
-        font-size: 14px;
-        color: #6c757d;
-        text-decoration: none;
         background: white;
     }
-    .nav-item.active {
-        background: #E94666;
+    .page-item.active {
+        background: #f63366;
         color: white;
         border: none;
     }
-    .nav-arrow {
-        color: #6c757d;
-        font-size: 24px;
+    .page-arrow {
+        color: #666;
+        font-size: 20px;
         cursor: pointer;
-        text-decoration: none;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -79,17 +74,43 @@ if 'history' not in st.session_state:
     st.session_state.history = []
 if 'camera_on' not in st.session_state:
     st.session_state.camera_on = False
+if 'recording' not in st.session_state:
+    st.session_state.recording = False
+if 'recorded_frames' not in st.session_state:
+    st.session_state.recorded_frames = []
+if 'start_time' not in st.session_state:
+    st.session_state.start_time = None
 
 def navigate_to(page):
-    st.session_state.page = page
+    if 1 <= page <= 5:
+        st.session_state.page = page
 
 def toggle_camera():
     st.session_state.camera_on = not st.session_state.camera_on
+    if not st.session_state.camera_on:
+        st.session_state.recording = False
+        st.session_state.recorded_frames = []
+        st.session_state.start_time = None
+
+def start_recording():
+    st.session_state.recording = True
+    st.session_state.recorded_frames = []
+    st.session_state.start_time = time.time()
+
+def stop_camera():
+    st.session_state.camera_on = False
+    st.session_state.recording = False
+    st.session_state.start_time = None
 
 # Page 1: Instructions and Camera Access
 def show_page_1():
     st.title("Rip Current Checker")
+    st.subheader("Set Up Your Camera")
     
+    # Camera icon and instructions
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.markdown("### 📸")
     # Tips section
     st.markdown("""
     ### Tips for Best Result
@@ -100,34 +121,61 @@ def show_page_1():
     """)
     
     # Camera functionality
-    if st.button("Access Camera", on_click=toggle_camera):
-        st.session_state.camera_on = True
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.button("Access Camera", key="access_camera", on_click=toggle_camera)
+    with col2:
+        st.button("Access Video", key="access_video", on_click=navigate_to, args=(2,))
     
     if st.session_state.camera_on:
         camera_placeholder = st.empty()
-        video_capture = cv2.VideoCapture(0)  # 0 is usually the default webcam
+        timer_placeholder = st.empty()
+        record_col1, record_col2 = st.columns([3, 1])
+        
+        with record_col1:
+            if not st.session_state.recording:
+                st.button("Start Recording", key="start_record", on_click=start_recording)
+        with record_col2:
+            st.button("Stop Camera", key="stop_camera", on_click=stop_camera)
+            
+        video_capture = cv2.VideoCapture(0)
         
         if video_capture.isOpened():
             try:
                 while st.session_state.camera_on:
                     ret, frame = video_capture.read()
                     if ret:
-                        # Convert BGR to RGB
-                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        camera_placeholder.image(frame, channels="RGB")
+                        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        camera_placeholder.image(frame_rgb, channels="RGB")
                         
-                        # Add a stop button
-                        if st.button("Stop Camera"):
-                            st.session_state.camera_on = False
-                            break
+                        if st.session_state.recording:
+                            st.session_state.recorded_frames.append(frame)
+                            elapsed_time = time.time() - st.session_state.start_time
+                            timer_placeholder.markdown(f"""
+                                <div class="recording-timer">Recording: {elapsed_time:.1f}s / 5.0s</div>
+                            """, unsafe_allow_html=True)
+                            
+                            if elapsed_time >= 5.0:
+                                st.session_state.recording = False
+                                st.session_state.camera_on = False
+                                
+                                if st.session_state.recorded_frames:
+                                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
+                                    out = cv2.VideoWriter(temp_file.name, 
+                                                        cv2.VideoWriter_fourcc(*'mp4v'), 
+                                                        30, 
+                                                        (frame.shape[1], frame.shape[0]))
+                                    for f in st.session_state.recorded_frames:
+                                        out.write(f)
+                                    out.release()
+                                    st.session_state.video_file = temp_file.name
+                                    navigate_to(3)
+                                break
             finally:
                 video_capture.release()
         else:
             st.error("Could not access the camera. Please check your camera permissions.")
     
-    st.button("Access Video", on_click=navigate_to, args=(2,))
-    
-    # Navigation
     show_navigation(1)
 
 # Page 2: Video Upload
@@ -197,27 +245,25 @@ def show_page_5():
 
 # Navigation bar
 def show_navigation(current_page):
-    cols = st.columns([1, 8, 1])  # Create three columns for layout
+    st.markdown('<div class="nav-container">', unsafe_allow_html=True)
     
-    with cols[1]:  # Use the middle column for navigation
-        st.markdown("""
-            <div class="nav-container">
-                <a class="nav-arrow">←</a>
-        """, unsafe_allow_html=True)
-        
-        for i in range(1, 6):
-            if i == current_page:
-                st.markdown(f"""
-                    <div class="nav-item active">{i}</div>
-                """, unsafe_allow_html=True)
-            else:
-                if st.button(str(i), key=f"nav_{i}"):
-                    navigate_to(i)
-        
-        st.markdown("""
-                <a class="nav-arrow">→</a>
-            </div>
-        """, unsafe_allow_html=True)
+    # Navigation arrows
+    st.markdown("""
+        <div class="nav-arrows">
+            <span class="nav-arrow">←</span>
+            <span class="nav-arrow">→</span>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Page numbers
+    st.markdown('<div class="nav-numbers">', unsafe_allow_html=True)
+    for i in range(1, 6):
+        if i == current_page:
+            st.markdown(f'<div class="nav-button active">{i}</div>', unsafe_allow_html=True)
+        else:
+            if st.button(str(i), key=f"nav_btn_{i}"):
+                navigate_to(i)
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 # Main app logic
 def main():

@@ -206,6 +206,7 @@ def show_page_3():
         progress_bar.progress(i + 1)
     
     st.session_state.analysis_complete = True
+    st.success("done! click next to view result")  # Show completion message
     navigate_to(4)
     
     show_navigation(3)
@@ -213,14 +214,10 @@ def show_page_3():
 # Page 4: Results
 def show_page_4():
     st.title("Analysis Results")
-    
     if st.session_state.analysis_complete:
-        st.markdown("### 95% sure no-rip detected!")
-        
-        # Add result to history
-        if len(st.session_state.history) < 9:  # Limit history to 9 items
+        st.success("✅ 95% sure no-rip detected!")
+        if len(st.session_state.history) < 9:
             st.session_state.history.append(("95% no-rip", time.strftime("%Y-%m-%d %H:%M")))
-        
         if st.button("Check history"):
             navigate_to(5)
     
@@ -241,29 +238,27 @@ def show_page_5():
             </div>
             """, unsafe_allow_html=True)
     
+    if st.button("Check again"):
+                navigate_to(1)        
     show_navigation(5)
 
-# Navigation bar
 def show_navigation(current_page):
-    st.markdown('<div class="nav-container">', unsafe_allow_html=True)
-    
-    # Navigation arrows
-    st.markdown("""
-        <div class="nav-arrows">
-            <span class="nav-arrow">←</span>
-            <span class="nav-arrow">→</span>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Page numbers
-    st.markdown('<div class="nav-numbers">', unsafe_allow_html=True)
-    for i in range(1, 6):
-        if i == current_page:
-            st.markdown(f'<div class="nav-button active">{i}</div>', unsafe_allow_html=True)
-        else:
-            if st.button(str(i), key=f"nav_btn_{i}"):
-                navigate_to(i)
-    st.markdown('</div></div>', unsafe_allow_html=True)
+    # Create 7 columns for ← 1 2 3 4 5 →
+    cols = st.columns(7)
+
+    # Left arrow
+    if current_page > 1:
+        if cols[0].button("Previous", key="prev"):
+            navigate_to(current_page - 1)
+    else:
+        cols[0].markdown("")  # placeholder
+
+    # Right arrow
+    if current_page < 5:
+        if cols[1].button("Next", key="next"):
+            navigate_to(current_page + 1)
+    else:
+        cols[6].markdown("")  # placeholder
 
 # Main app logic
 def main():

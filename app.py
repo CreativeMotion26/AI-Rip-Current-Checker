@@ -226,7 +226,6 @@ def show_page_4():
 # Page 5: History
 def show_page_5():
     st.title("History")
-    
     # Display history in a grid
     col1, col2, col3 = st.columns(3)
     for idx, (result, timestamp) in enumerate(st.session_state.history):
@@ -238,7 +237,7 @@ def show_page_5():
             </div>
             """, unsafe_allow_html=True)
     
-    if st.button("Check again"):
+    if st.button("Check again!"):
                 navigate_to(1)        
     show_navigation(5)
 

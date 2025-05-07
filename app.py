@@ -237,7 +237,7 @@ def show_page_5():
             </div>
             """, unsafe_allow_html=True)
     
-    if st.button("Check again!"):
+    if st.button("Check again"):
                 navigate_to(1)        
     show_navigation(5)
 

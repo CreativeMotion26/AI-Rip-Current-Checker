@@ -7,8 +7,8 @@ import time
 
 # Set page config
 st.set_page_config(
-    page_title="Rip Current Checker",
-    page_icon="🌊",
+    page_title="Swimmer Detection",
+    page_icon="🏊‍♂️",
     layout="centered"
 )
 
@@ -104,7 +104,7 @@ def stop_camera():
 
 # Page 1: Instructions and Camera Access
 def show_page_1():
-    st.title("Rip Current Checker")
+    st.title("Swimmer Detection")
     st.subheader("Set Up Your Camera")
     
     # Camera icon and instructions
@@ -115,7 +115,7 @@ def show_page_1():
     st.markdown("""
     ### Tips for Best Result
     1. Set your camera to 4K resolution
-    2. Stand a few meters from the water's edge
+    2. Position camera to capture the swimming area
     3. Use landscape mode
     4. Take a 5-second video, holding steady
     """)
@@ -215,9 +215,9 @@ def show_page_3():
 def show_page_4():
     st.title("Analysis Results")
     if st.session_state.analysis_complete:
-        st.success("✅ 95% sure no-rip detected!")
+        st.success("✅ Swimmer detected in the video!")
         if len(st.session_state.history) < 9:
-            st.session_state.history.append(("95% no-rip", time.strftime("%Y-%m-%d %H:%M")))
+            st.session_state.history.append(("Swimmer detected", time.strftime("%Y-%m-%d %H:%M")))
         if st.button("Check history"):
             navigate_to(5)
     

@@ -152,10 +152,10 @@ def show_page_1():
                             st.session_state.recorded_frames.append(frame)
                             elapsed_time = time.time() - st.session_state.start_time
                             timer_placeholder.markdown(f"""
-                                <div class="recording-timer">Recording: {elapsed_time:.1f}s / 5.0s</div>
+                                <div class="recording-timer">Recording: {elapsed_time:.1f}s / 30.0s</div>
                             """, unsafe_allow_html=True)
                             
-                            if elapsed_time >= 5.0:
+                            if elapsed_time >= 30.0:
                                 st.session_state.recording = False
                                 st.session_state.camera_on = False
                                 
